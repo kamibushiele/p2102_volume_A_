@@ -62,7 +62,8 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 6K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 32K
+FLASH (rx)     : ORIGIN = 0x08000000, LENGTH = 31K
+FLASH_USER (r) : ORIGIN = 0x08007C00, LENGTH = 1K
 }
 
 /* Define output sections */
@@ -130,6 +131,12 @@ SECTIONS
     PROVIDE_HIDDEN (__fini_array_end = .);
   } >FLASH
 
+  .backup_flash :
+  {
+    _backup_flash_start = .;
+    . = . + LENGTH(FLASH_USER);
+  } >FLASH_USER
+  
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 
@@ -145,7 +152,6 @@ SECTIONS
     _edata = .;        /* define a global symbol at data end */
   } >RAM AT> FLASH
 
-  
   /* Uninitialized data section */
   . = ALIGN(4);
   .bss :

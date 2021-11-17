@@ -1,6 +1,6 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
+   ******************************************************************************
   * @file           : main.c
   * @brief          : Main program body
   ******************************************************************************
@@ -22,7 +22,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "led.h"
+#include "sw.h"
+#include "volume.h"
+#include "backup.h"
+#include "ois.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,7 +52,6 @@ DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -74,7 +77,6 @@ static void MX_TIM3_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -100,17 +102,23 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-
+  // HAL_TIM_Base_Start_IT(&htim3);
+  HAL_TIM_Base_Start_IT(&htim2);
+  LED_Init();
+  Vol_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+  while (1) {
+    Sw_In_While();
+    Led_In_While();
+    OIS_In_While();
+    Vol_In_While();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+    }
   /* USER CODE END 3 */
 }
 
@@ -276,7 +284,7 @@ static void MX_USART1_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART1_Init 2 */
-
+  OIS_Init();
   /* USER CODE END USART1_Init 2 */
 
 }
@@ -382,7 +390,22 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {  //UART TX end interrupt
+    huart->gState = HAL_UART_STATE_READY;
+}
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {  //timer割り込み
+  if (htim == &htim3) {//2us
+    Vol_In_Timer_2us();
+  }
+  if (htim == &htim2) {//1ms
+    Sw_In_Timer();
+    LED_In_Timer();
+    Vol_In_Timer_1ms();
+  }
+}
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+  Sw_In_Interrupt(GPIO_Pin);
+}
 /* USER CODE END 4 */
 
 /**
@@ -392,11 +415,11 @@ static void MX_GPIO_Init(void)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+    /* User can add his own implementation to report the HAL error return state */
+    __disable_irq();
+    while (1)
+    {
+    }
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -411,7 +434,7 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
+    /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
